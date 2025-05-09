@@ -44,9 +44,9 @@
 // 3. TaskList：自定義組件
 //    - 遵循組件組合原則
 //    - 實現關注點分離
-import Image from "next/image";
-import { useState } from "react";
-import TaskList from "../components/TaskList";
+import Link from "next/link";
+import { useState ,useEffect} from "react";
+import TaskList from "./components/TaskList";
 
 // 【主頁組件】
 // 在 Next.js 中，app/page.js 是應用的默認首頁
@@ -65,7 +65,13 @@ export default function Home() {
   //    - 實現受控組件模式
   //    - 狀態與 UI 同步
   const [newTask,setNewTask]=useState('');
-
+  const [nextId,setNextId]=useState(1);
+  useEffect(()=>{
+    const savedTasks=JSON.parse(localStorage.getItem('tasks'))||[];
+    setTasks(savedTasks);
+    const maxId=savedTasks.reduce((max,task)=>Math.max(max,task.id),0);
+    setNextId(maxId+1);
+  },[]);
   // 【事件處理函數】
   // addTask 函數：添加新任務到列表
   // 1. 使用展開運算符 (...) 創建新數組
@@ -74,15 +80,29 @@ export default function Home() {
   const addTask=()=>{
     console.log("Before:",tasks);
     console.log("NewTask:",newTask);
+    const newTaskObj={
+      id:nextId,
+      title:newTask,
+      description:'',
+
+    };
+
+
     // 創建新數組而不是修改原數組
     // 這是 React 中操作數組的最佳實踐
-    const updatedTasks=[...tasks,newTask];
+    const updatedTasks=[...tasks,newTaskObj];
     setTasks(updatedTasks);
     console.log("After:",updatedTasks);
     // 重置輸入框
     setNewTask('');
+    setNextId(nextId+1);
+    localStorage.setItem('tasks',JSON.stringify(updatedTasks));
   };
-
+  const handleDelete=(index)=>{
+      const newTasks=tasks.filter((_,i)=>i!==index);
+      setTasks (newTasks);
+      localStorage.setItem('tasks',JSON.stringify(newTasks));
+  }
   // 【JSX 語法與 React 渲染】
   // JSX 允許在 JavaScript 中寫 HTML 類似的代碼
   // 1. className 代替 class（因為 class 是 JS 關鍵字）
@@ -92,7 +112,7 @@ export default function Home() {
     // 【Tailwind CSS 樣式】
     // Tailwind 是一個實用優先的 CSS 框架
     // p-4：padding: 1rem
-    <main className="p-4">
+    <main className="p-4 max-w-md mx-auto">
       {/* 頁面標題 */}
       <h1 className="text-2xl font bold">Task Board</h1>
 
@@ -129,7 +149,7 @@ export default function Home() {
        * 2. 實現組件複用
        * 3. 保持代碼模塊化
        */}
-      <TaskList tasks={tasks}/>
+      <TaskList tasks={tasks} onDelete={handleDelete}/>
     </main>
   );
 }
